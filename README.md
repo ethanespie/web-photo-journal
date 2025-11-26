@@ -1,3 +1,8 @@
+## Note: WIP
+
+This README and repo are very much WIP. More to come soon/eventually.
+
+
 ## Introduction
 This was an assignment from my 2025 Python Programming certificate program at the University of WA.
 
@@ -11,7 +16,8 @@ Technologies used:
 * TailwindCSS framework 
 * htmx JavaScript library
 
-## Running the app
+
+## Running the app locally
 
 From repo root folder, start dev server with:
 
@@ -22,10 +28,5 @@ OR
 `uvicorn photo_journal_app.main:app --reload
 `
 
-Then go to http://127.0.0.1:8000 
+Then go to http://127.0.0.1:8000 and upload some pics!
 
-
-
-## Note: WIP
-
-This README and repo are a WIP. More to come soon/eventually.
