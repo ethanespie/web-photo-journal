@@ -1,6 +1,7 @@
 ## Note: WIP
 
-This README and repo are very much WIP. More to come soon/eventually.
+This README is very much WIP. More info/instructions to come.  
+App is working as intended though.
 
 
 ## Introduction
