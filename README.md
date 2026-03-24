@@ -1,9 +1,3 @@
-## Note: WIP
-
-This README is very much WIP. More info/instructions to come.  
-App is working as intended though.
-
-
 ## Introduction
 This was an assignment from my 2025 Python Programming certificate program at the University of WA.
 
