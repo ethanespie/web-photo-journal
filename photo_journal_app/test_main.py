@@ -70,6 +70,24 @@ def test_refresh_script_scrolls_to_top_on_reload():
     assert b"window.scrollTo(0, 0)" in response.content
 
 
+def test_add_photo_script_scrolls_to_top_when_scrolled():
+    """
+    Test that add-photo success handler scrolls to top when user is not already at top.
+    """
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"if (window.scrollY > 0)" in response.content
+
+
+def test_post_tiny_photo_upload_succeeds():
+    """
+    Regression test: tiny images (e.g., 1x1) should still upload successfully.
+    """
+    response = post_photo_to_db("tiny works")
+    assert response.status_code == 200
+    assert b"tiny works" in response.content
+
+
 @patch("photo_journal_app.main.resize_image_for_web")
 @patch("aiofiles.open")
 @patch("PIL.Image.open")
@@ -125,7 +143,7 @@ def test_edit_photo(mock_image_open, mock_aio_open, mock_resize):
     photo_id = photo_created.doc_id
     response = client.put(
         f"/edit-photo/{photo_id}",
-        data={"entry": "my super cool photo"},  # Changed from json= to data=
+        data={"entry": "my super cool photo"},
     )
 
     assert response.status_code == 200

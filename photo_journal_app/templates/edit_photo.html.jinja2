@@ -1,8 +1,9 @@
+{# Inline edit panel: lets the user update or cancel edits for a single photo entry. #}
 <div id="photo-{{ photo.doc_id }}"
      class="bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700 mb-4">
 
-  <div class="flex justify-center">
-    <img class="rounded-t-lg transition"
+  <div class="flex justify-center pt-2 px-2">
+    <img class="rounded-none transition"
          src="{{ url_for('static', path=photo.file_path) }}"
          alt="" />
   </div>

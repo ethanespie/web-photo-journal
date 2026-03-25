@@ -1,4 +1,4 @@
-<!-- templates/photo_journal.html.jinja2 -->
+{# Main photo journal page: upload form, photostream list, and infinite-scroll loading trigger. #}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -139,6 +139,10 @@
             el.reset();
             const file = el.querySelector('input[type=file]');
             if (file) file.value = null;
+
+            if (window.scrollY > 0) {
+            window.scrollTo(0, 0);
+            }
 
             // keep your infinite-scroll skip in sync
             window.dispatchEvent(new CustomEvent('photo-added'));
