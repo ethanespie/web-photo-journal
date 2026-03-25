@@ -13,7 +13,7 @@
   <body>
     <nav class="w-full bg-blue-200 py-4 shadow sticky top-0 z-50">
       <div class="flex justify-center">
-        <h1 class="text-3xl text-black dark:text-white">My Photo Journal</h1>
+        <h1 class="text-3xl text-black dark:text-white border-2 border-black rounded-lg shadow px-4 py-1">My Photo Journal</h1>
       </div>
     </nav>
 
@@ -21,7 +21,7 @@
       <!-- Column -->
       <div class="col-span-12 md:col-span-4 mx-4">
         <!-- sticky wrapper keeps the add-photo panel visible while scrolling -->
-        <div class="sticky-left-panel" style="position:sticky; top:0; z-index:40; align-self:start;">
+        <div class="sticky-left-panel border border-black rounded-lg shadow p-3" style="position:sticky; top:0; z-index:40; align-self:start;">
           <h1 class="text-xl">Add new photo</h1>
           <form id="add-photo-form"
                 hx-post="/post-photo"
@@ -34,7 +34,7 @@
               <input type="file"
                      id="photo_upload"
                      name="photo_upload"
-                     class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gray-200 file:text-gray-800 hover:file:bg-gray-300"
+                     class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-3 file:rounded file:border-0 file:bg-gray-400 file:text-gray-800 hover:file:bg-gray-300"
                      required />
             </div>
             <div>
@@ -43,8 +43,7 @@
               <textarea id="entry"
                         name="entry"
                         class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        placeholder="Write your thoughts here..."
-                        required></textarea>
+                        placeholder="Write your thoughts here..."></textarea>
             </div>
             <button type="submit"
                     class="mt-4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
@@ -56,7 +55,7 @@
       <!-- Column -->
       <div class="col-span-12 md:col-span-8 mx-4">
         <div class="flex justify-between">
-          <h1 class="text-xl mb-4">My photostream</h1>
+          <h1 class="text-xl mb-4 border border-black rounded-lg shadow p-2">My photostream</h1>
         </div>
         <div id="photos">
           {% block photos %}
@@ -84,6 +83,24 @@
       </div>
     </div>
     <script>
+      // On browser refresh, ensure the page starts at the top.
+      (function () {
+        window.addEventListener('pageshow', function () {
+          const navEntry = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+          const isReloadByTiming = navEntry && navEntry.type === 'reload';
+          const isReloadLegacy = performance.navigation && performance.navigation.type === 1;
+          const isReload = isReloadByTiming || isReloadLegacy;
+          if (isReload) {
+            if ('scrollRestoration' in history) {
+              history.scrollRestoration = 'manual';
+            }
+            window.scrollTo(0, 0);
+            setTimeout(function () { window.scrollTo(0, 0); }, 0);
+          }
+        });
+      }());
+    </script>
+    <script>
       // Keep the left sticky panel exactly below the navbar so it doesn't "jump".
       (function () {
         function updateLeftPanelTop() {
@@ -91,7 +108,8 @@
           const panel = document.querySelector('.sticky-left-panel');
           if (!nav || !panel) return;
           const navHeight = Math.ceil(nav.getBoundingClientRect().height);
-          panel.style.top = navHeight + 'px';
+          // Include the grid's top margin so sticky engages immediately with no initial drift.
+          panel.style.top = (navHeight + 20) + 'px';
         }
         window.addEventListener('load', updateLeftPanelTop);
         window.addEventListener('resize', updateLeftPanelTop);

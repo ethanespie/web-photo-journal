@@ -29,7 +29,7 @@ app.dependency_overrides[get_db] = lambda: test_db
 client = TestClient(app)
 
 
-def post_photo_to_db(entry: str):
+def post_photo_to_db(entry: str | None = None):
     """
     Helper to simulate posting a photo with an image + entry.
     """
@@ -39,9 +39,10 @@ def post_photo_to_db(entry: str):
         image.save(tmp.name)
         tmp.close()
         with open(tmp.name, "rb") as f:
+            data = {} if entry is None else {"entry": entry}
             response = client.post(
                 "/post-photo",
-                data={"entry": entry},
+                data=data,
                 files={"photo_upload": ("test.jpg", f, "image/jpeg")},
             )
         return response
@@ -53,9 +54,20 @@ def test_get_photo_journal():
     """
     Test that the main photo journal page loads successfully and contains expected content.
     """
-    response = client.get("/")
+    response = client.get("/", headers={"HX-Request": "true"})
     assert response.status_code == 200
     assert b"My photos" in response.content
+
+
+def test_refresh_script_scrolls_to_top_on_reload():
+    """
+    Test that the main page includes script logic to scroll to top on browser refresh.
+    """
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"performance.navigation.type === 1" in response.content
+    assert b"history.scrollRestoration = 'manual'" in response.content
+    assert b"window.scrollTo(0, 0)" in response.content
 
 
 @patch("photo_journal_app.main.resize_image_for_web")
@@ -68,6 +80,22 @@ def test_post_new_photo(mock_image_open, mock_aio_open, mock_resize):
     response = post_photo_to_db("my awesome photo")
     assert response.status_code == 200
     assert b"my awesome photo" in response.content
+
+
+@patch("photo_journal_app.main.resize_image_for_web")
+@patch("aiofiles.open")
+@patch("PIL.Image.open")
+def test_post_new_photo_without_caption_uses_default(mock_image_open, mock_aio_open, mock_resize):
+    """
+    Test that missing or blank captions are saved as the default caption.
+    """
+    missing_caption_response = post_photo_to_db()
+    assert missing_caption_response.status_code == 200
+    assert b"[no caption]" in missing_caption_response.content
+
+    blank_caption_response = post_photo_to_db("   ")
+    assert blank_caption_response.status_code == 200
+    assert b"[no caption]" in blank_caption_response.content
 
 
 @pytest.fixture(autouse=True)
@@ -124,8 +152,23 @@ def test_delete_photo(mock_image_open, mock_aio_open, mock_resize, mock_remove):
         params={"photo_id": str(photo_created.doc_id)},
     )
     assert response.status_code == 200
-    response = client.get("/")
+    response = client.get("/", headers={"HX-Request": "true"})
     assert b"my great photo" not in response.content
+
+
+@patch("photo_journal_app.main.resize_image_for_web")
+@patch("aiofiles.open")
+@patch("PIL.Image.open")
+def test_delete_button_has_confirmation_prompt(mock_image_open, mock_aio_open, mock_resize):
+    """
+    Test that delete buttons include a confirmation prompt before deleting.
+    """
+    response = post_photo_to_db("my confirm photo")
+    assert response.status_code == 200
+
+    page = client.get("/", headers={"HX-Request": "true"})
+    assert page.status_code == 200
+    assert b'hx-confirm="Are you sure you want to delete this photo?"' in page.content
 
 
 @patch("photo_journal_app.main.resize_image_for_web")
@@ -148,7 +191,7 @@ def test_load_photos(mock_image_open, mock_aio_open, mock_resize):
 
     # get 3 most recent
     photos_to_load = get_sorted_photos(test_db.all(), 0, PHOTOS_PER_PAGE)
-    response = client.get("/")
+    response = client.get("/", headers={"HX-Request": "true"})
     assert response.status_code == 200
     for photo in photos_to_load:
         assert photo["entry"].encode() in response.content

@@ -100,8 +100,8 @@ def photo_journal(request: Request, db: TinyDB = Depends(get_db)):
 @app.post("/post-photo", response_class=HTMLResponse)
 async def post_photo(
     request: Request,
-    entry: Annotated[str, Form()],
     photo_upload: UploadFile,
+    entry: Annotated[str | None, Form()] = None,
     db: TinyDB = Depends(get_db),
 ):
     """
@@ -130,9 +130,14 @@ async def post_photo(
         )
 
     resize_image_for_web(photo_file_path)
+    normalized_entry = (entry or "").strip() or "[no caption]"
     uploaded_at = time.strftime("%m/%d/%Y %I:%M:%S%p")
     inserted_id = db.insert(
-        {"entry": entry, "file_path": photo_file_path, "uploaded_at": uploaded_at}
+        {
+            "entry": normalized_entry,
+            "file_path": photo_file_path,
+            "uploaded_at": uploaded_at,
+        }
     )
     new_photo = db.get(doc_id=inserted_id)
 
