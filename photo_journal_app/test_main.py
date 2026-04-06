@@ -29,7 +29,7 @@ app.dependency_overrides[get_db] = lambda: test_db
 client = TestClient(app)
 
 
-def post_photo_to_db(entry: str):
+def post_photo_to_db(entry: str | None = None):
     """
     Helper to simulate posting a photo with an image + entry.
     """
@@ -39,9 +39,10 @@ def post_photo_to_db(entry: str):
         image.save(tmp.name)
         tmp.close()
         with open(tmp.name, "rb") as f:
+            data = {} if entry is None else {"entry": entry}
             response = client.post(
                 "/post-photo",
-                data={"entry": entry},
+                data=data,
                 files={"photo_upload": ("test.jpg", f, "image/jpeg")},
             )
         return response
@@ -69,6 +70,24 @@ def test_refresh_script_scrolls_to_top_on_reload():
     assert b"window.scrollTo(0, 0)" in response.content
 
 
+def test_add_photo_script_scrolls_to_top_when_scrolled():
+    """
+    Test that add-photo success handler scrolls to top when user is not already at top.
+    """
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"if (window.scrollY > 0)" in response.content
+
+
+def test_post_tiny_photo_upload_succeeds():
+    """
+    Regression test: tiny images (e.g., 1x1) should still upload successfully.
+    """
+    response = post_photo_to_db("tiny works")
+    assert response.status_code == 200
+    assert b"tiny works" in response.content
+
+
 @patch("photo_journal_app.main.resize_image_for_web")
 @patch("aiofiles.open")
 @patch("PIL.Image.open")
@@ -79,6 +98,22 @@ def test_post_new_photo(mock_image_open, mock_aio_open, mock_resize):
     response = post_photo_to_db("my awesome photo")
     assert response.status_code == 200
     assert b"my awesome photo" in response.content
+
+
+@patch("photo_journal_app.main.resize_image_for_web")
+@patch("aiofiles.open")
+@patch("PIL.Image.open")
+def test_post_new_photo_without_caption_uses_default(mock_image_open, mock_aio_open, mock_resize):
+    """
+    Test that missing or blank captions are saved as the default caption.
+    """
+    missing_caption_response = post_photo_to_db()
+    assert missing_caption_response.status_code == 200
+    assert b"[no caption]" in missing_caption_response.content
+
+    blank_caption_response = post_photo_to_db("   ")
+    assert blank_caption_response.status_code == 200
+    assert b"[no caption]" in blank_caption_response.content
 
 
 @pytest.fixture(autouse=True)
@@ -108,7 +143,7 @@ def test_edit_photo(mock_image_open, mock_aio_open, mock_resize):
     photo_id = photo_created.doc_id
     response = client.put(
         f"/edit-photo/{photo_id}",
-        data={"entry": "my super cool photo"},  # Changed from json= to data=
+        data={"entry": "my super cool photo"},
     )
 
     assert response.status_code == 200
