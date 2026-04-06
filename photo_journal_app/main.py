@@ -2,7 +2,7 @@ r"""
 UW Professional & Continuing Education - Python 330B - Summer 2025
 Assignment 09: Full Stack Web Development with FastAPI
 ------------
-This module: driver script
+This module: FastAPI routes and helper functions for the photo journal app.
 """
 
 # pylint: disable=import-error
@@ -32,7 +32,7 @@ templates = Jinja2Blocks(directory=BASE_DIR / "templates")
 
 def get_db():
     """
-    Creates and returns a TinyDB database connection instance for storing photo journal entries.
+    Returns a TinyDB database connection for photo journal entries.
     """
     return TinyDB(BASE_DIR / "db.json")
 
@@ -43,7 +43,7 @@ PHOTOS_PER_PAGE = 3
 # Utility functions
 def get_sorted_photos(all_photos, current_photo_count, new_photo_count):
     """
-    Retrieves a paginated subset of photos sorted by upload date in desc order (newest first).
+    Returns a paginated subset of photos sorted by upload time (newest first).
     """
     return sorted(
         all_photos,
@@ -54,8 +54,7 @@ def get_sorted_photos(all_photos, current_photo_count, new_photo_count):
 
 def resize_image_for_web(photo_file_path: str):
     """
-    Resizes uploaded images to web-friendly dimensions, optimizing landscape and portrait photos
-    differently.
+    Resizes uploaded images to web-friendly dimensions for landscape/portrait photos.
     """
     full_path = BASE_DIR / "static" / photo_file_path.lstrip("/")
     image_file = Image.open(full_path)
@@ -77,11 +76,10 @@ def photo_journal(request: Request, db: TinyDB = Depends(get_db)):
     all_photos = db.all()
     total_photos = len(all_photos)
 
-    # HTMX sets the "HX-Request" header to "true" when making partial requests.
+    # HTMX sets the HX-Request header to true for partial page requests.
     is_htmx = request.headers.get("hx-request") == "true" or request.headers.get("HX-Request") == "true"
 
-    # If this is a full page load, show all photos currently in the DB so refresh preserves what is visible.
-    # If this is an HTMX request (partial), keep the paginated behaviour.
+    # Full-page load shows all photos; HTMX requests stay paginated.
     if is_htmx:
         display_count = PHOTOS_PER_PAGE
     else:
@@ -100,28 +98,28 @@ def photo_journal(request: Request, db: TinyDB = Depends(get_db)):
 @app.post("/post-photo", response_class=HTMLResponse)
 async def post_photo(
     request: Request,
-    entry: Annotated[str, Form()],
     photo_upload: UploadFile,
+    entry: Annotated[str | None, Form()] = None,
     db: TinyDB = Depends(get_db),
 ):
     """
     Processes photo uploads, validates image files, resizes them, and creates a new journal entry.
     """
     os.makedirs(BASE_DIR / "static" / "images", exist_ok=True)
-    valid_image_file = True
     photo_file_path = f"images/{photo_upload.filename}"
     full_path = BASE_DIR / "static" / photo_file_path
+
+    # Write upload to disk first, then validate after closing the file handle.
     async with aiofiles.open(full_path, "wb") as out_file:
         content = await photo_upload.read()
         await out_file.write(content)
-        try:
-            with Image.open(full_path) as image_file:
-                image_file.verify()
-        except (IOError, SyntaxError):
-            valid_image_file = False
-            os.remove(full_path)
 
-    if not valid_image_file:
+    try:
+        with Image.open(full_path) as image_file:
+            image_file.verify()
+    except (IOError, SyntaxError):
+        if full_path.exists():
+            full_path.unlink()
         return templates.TemplateResponse(
             request,
             "photo_journal.html.jinja2",
@@ -130,9 +128,15 @@ async def post_photo(
         )
 
     resize_image_for_web(photo_file_path)
+    # Store a fallback caption if the user leaves the caption blank.
+    normalized_entry = (entry or "").strip() or "[no caption]"
     uploaded_at = time.strftime("%m/%d/%Y %I:%M:%S%p")
     inserted_id = db.insert(
-        {"entry": entry, "file_path": photo_file_path, "uploaded_at": uploaded_at}
+        {
+            "entry": normalized_entry,
+            "file_path": photo_file_path,
+            "uploaded_at": uploaded_at,
+        }
     )
     new_photo = db.get(doc_id=inserted_id)
 
