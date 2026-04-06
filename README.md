@@ -1,9 +1,9 @@
 # Introduction
 This was an assignment from my 2025 Python Programming certificate program at the University of WA.
 
-Key purposes/actions of this app include:
-* Users can upload their pics and give them captions
-* Users can edit captions of pics they've uploaded, and delete pics they've uploaded
+Key purposes/actions of this app:
+* Photo journal / photo stream type site that allows the to upload their pics and give them captions.
+* Users can edit captions of pics they've uploaded, and delete pics they've uploaded.
 
 Technologies used:
 * Python and FastAPI for backend code
@@ -38,3 +38,8 @@ Then go to http://127.0.0.1:8000 and upload some pics!
 Run this from project root (with Command Prompt, not PS).
 
 `pytest .\photo_journal_app\test_main.py  -vv --cov --cov-report term-missing`
+
+
+# Resetting the DB
+
+To reset the DB to delete all pics and get a clean slate: delete or rename `db.json` and also the `.\static\images` directory.
