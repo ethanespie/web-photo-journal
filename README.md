@@ -27,15 +27,14 @@ From repo root folder, start dev server with:
 
 OR
 
-`uvicorn photo_journal_app.main:app --reload
-`
+`uvicorn photo_journal_app.main:app --reload`
 
 Then go to http://127.0.0.1:8000 and upload some pics!
 
 
 # Running Tests + Coverage Report
 
-Run this from project root (with Command Prompt, not PS).
+Make sure virtual environment activated and then run this from project root (with Command Prompt, not PS):
 
 `pytest .\photo_journal_app\test_main.py  -vv --cov --cov-report term-missing`
 
