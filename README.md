@@ -14,9 +14,16 @@ Technologies used:
 
 # Set Up / Prerequisites
 
-1. Clone repo
+1. Clone repo and `cd` into it
 2. Create virtual environment and activate it
-3. Install requirements from `requirements.txt`
+
+    `python -m venv .venv`
+    
+    `.\venv\Scripts\activate`
+3. Install requirements
+    
+    `pip install -r photo_journal_app\requirements.txt`
+
 
 
 # Running the App Locally
@@ -34,7 +41,7 @@ Then go to http://127.0.0.1:8000 and upload some pics!
 
 # Running Tests + Coverage Report
 
-Make sure virtual environment activated and then run this from project root (with Command Prompt, not PS):
+Ensure the Setup steps above have been done, then run this from project root (with Command Prompt, not PS):
 
 `pytest .\photo_journal_app\test_main.py  -vv --cov --cov-report term-missing`
 
